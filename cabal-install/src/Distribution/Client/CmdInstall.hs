@@ -37,7 +37,6 @@ import Distribution.Client.Setup
 import Distribution.Client.Types
          ( PackageSpecifier(..), PackageLocation(..), UnresolvedSourcePackage
          , SourcePackageDb(..) )
-import qualified Distribution.Client.InstallPlan as InstallPlan
 import Distribution.Package
          ( Package(..), PackageName, unPackageName )
 import Distribution.Types.PackageId
@@ -475,9 +474,6 @@ getSpecsAndTargetSelectors verbosity reducedVerbosity pkgDb targetSelectors loca
       verbosity pkgDb elaboratedPlan targetSelectors
 
   let
-    planMap = InstallPlan.toMap elaboratedPlan
-    targetIds = Map.keys targets
-
     sdistize (SpecificSourcePackage spkg) =
       SpecificSourcePackage spkg'
       where
@@ -487,13 +483,7 @@ getSpecsAndTargetSelectors verbosity reducedVerbosity pkgDb targetSelectors loca
 
     local = sdistize <$> localPackages localBaseCtx
 
-    gatherTargets :: UnitId -> TargetSelector
-    gatherTargets targetId = TargetPackageNamed pkgName targetFilter
-      where
-        targetUnit = Map.findWithDefault (error "cannot find target unit") targetId planMap
-        PackageIdentifier{..} = packageId targetUnit
-
-    targets' = fmap gatherTargets targetIds
+    targets' = uniqueTargetSelectors targets
 
     hackagePkgs :: [PackageSpecifier UnresolvedSourcePackage]
     hackagePkgs = flip NamedPackage [] <$> hackageNames
